@@ -1,0 +1,79 @@
+The Queries:
+
+Q1: How many family-friendly movies are renting?
+
+select *
+from 
+  (select F.title as film_title, C.name as category_name, count(title) as rental_count
+   from film f
+     join film_category f_cat
+     on f_cat.film_id = f.film_id
+     join category c
+     on c.category_id = f_cat.category_id
+     join inventory i
+     on i.film_id = f.film_id
+     join rental r 
+     on i.inventory_id = r.inventory_id
+     group by film_title, category_name
+     order by category_name, film_title) as sub
+
+where category_name= 'Animation'or 
+      category_name= 'Children'or 
+      category_name='Classics'or 
+      category_name='Comedy'or 
+      category_name='Family'or
+      category_name='Music'
+
+
+
+Q2: What is the length of rental duration of these
+family-friendly movies?
+
+select *,ntile(4) over (order by rental_duration) as standard_quartile
+from 
+  (select F.title, name, rental_duration
+   from film f
+     join film_category f_cat
+     on f_cat.film_id = f.film_id
+     join category c
+     on c.category_id = f_cat.category_id
+order by 3) as sub
+
+where name= 'Animation'or 
+      name= 'Children'or 
+      name='Classics'or 
+      name='Comedy'or 
+      name='Family'or
+      name='Music'
+order by standard_quartile
+
+
+
+Q3: What are the top 10 rental movies?
+
+
+select F.title as film_title, count(title) as rental_count
+   from film f
+     join inventory i
+     on i.film_id = f.film_id
+     join rental r 
+     on i.inventory_id = r.inventory_id
+     group by film_title
+     order by  rental_count desc
+     limit 10
+
+
+
+Q4: Identify 10 customers who made the highest total amount of payment?
+
+
+select full_name, total_amount
+from(
+  select c.customer_id, concat(first_name,' ',last_name) as full_name, sum(amount) OVER ( partition by c.customer_id) AS total_amount
+  from customer c
+  join payment p
+  on c.customer_id = p.customer_id
+) sub
+  group by full_name,total_amount
+order by total_amount desc
+limit 10
